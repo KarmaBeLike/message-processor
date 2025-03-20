@@ -13,6 +13,7 @@ import (
 	"github.com/KarmaBeLike/message-processor/config"
 	"github.com/KarmaBeLike/message-processor/internal/api"
 	"github.com/KarmaBeLike/message-processor/internal/database"
+	"github.com/KarmaBeLike/message-processor/internal/kafka"
 
 	"github.com/KarmaBeLike/message-processor/internal/repository"
 
@@ -39,17 +40,17 @@ func main() {
 	}
 
 	messageRepo := repository.NewMessageRepository(dbpool)
-	// kafkaProducer := kafka.NewKafkaProducer([]string{cfg.KafkaHost + ":" + cfg.KafkaPort}, cfg.Topic)
-	// kafkaConsumer := kafka.NewKafkaConsumer([]string{cfg.KafkaHost + ":" + cfg.KafkaPort}, cfg.Topic, cfg.Group, messageRepo)
+	kafkaProducer := kafka.NewKafkaProducer([]string{cfg.KafkaHost + ":" + cfg.KafkaPort}, cfg.Topic)
+	kafkaConsumer := kafka.NewKafkaConsumer([]string{cfg.KafkaHost + ":" + cfg.KafkaPort}, cfg.Topic, cfg.Group, messageRepo)
 
 	router := gin.Default()
 
-	messageHandler := api.NewMessageHandler(messageRepo /*, kafkaProducer*/)
+	messageHandler := api.NewMessageHandler(messageRepo, kafkaProducer)
 
 	router.POST("/messages", messageHandler.PostMessage)
 	router.GET("/statistics", messageHandler.GetStatistics)
 
-	// go kafkaConsumer.StartConsuming(context.Background())
+	go kafkaConsumer.StartConsuming(context.Background())
 
 	srv := &http.Server{
 		Addr:    "localhost:8080",

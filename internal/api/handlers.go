@@ -17,7 +17,7 @@ type MessageHandler struct {
 	Producer *kafka.KafkaProducer
 }
 
-func NewMessageHandler(repo *repository.MessageRepository /*, producer *kafka.KafkaProducer*/) *MessageHandler {
+func NewMessageHandler(repo *repository.MessageRepository, producer *kafka.KafkaProducer) *MessageHandler {
 	return &MessageHandler{
 		Repo: repo,
 		// Producer: producer,
