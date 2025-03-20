@@ -2,7 +2,7 @@ FROM golang:1.20
 WORKDIR /message_service
 COPY . . 
 
-RUN go build -o message_service cmd/server/main.go
+RUN go build -o message_service cmd/main.go
 RUN chmod +x message_service
 CMD ["./message_service"]
 

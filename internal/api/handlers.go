@@ -15,19 +15,12 @@ import (
 type MessageHandler struct {
 	Repo     *repository.MessageRepository
 	Producer *kafka.KafkaProducer
-	// Router   *gin.Engine
 }
 
-// func (h *MessageHandler) ApiRouter() {
-// 	h.Router.POST("/messages", h.PostMessage)
-// 	h.Router.GET("/statistics", h.GetStatistics)
-// }
-
-func NewMessageHandler(repo *repository.MessageRepository, producer *kafka.KafkaProducer /*, router *gin.Engine*/) *MessageHandler {
+func NewMessageHandler(repo *repository.MessageRepository /*, producer *kafka.KafkaProducer*/) *MessageHandler {
 	return &MessageHandler{
-		Repo:     repo,
-		Producer: producer,
-		// Router:   router,
+		Repo: repo,
+		// Producer: producer,
 	}
 }
 

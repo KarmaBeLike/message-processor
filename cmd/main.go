@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,12 +12,11 @@ import (
 
 	"github.com/KarmaBeLike/message-processor/config"
 	"github.com/KarmaBeLike/message-processor/internal/api"
-	"github.com/KarmaBeLike/message-processor/internal/kafka"
+	"github.com/KarmaBeLike/message-processor/internal/database"
 
 	"github.com/KarmaBeLike/message-processor/internal/repository"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 func main() {
@@ -26,26 +26,30 @@ func main() {
 	}
 	fmt.Println("config", cfg)
 
-	dbpool, err := pgxpool.Connect(context.Background(),
-		fmt.Sprintf("postgresql://%s:%s@%s:%s/%s",
-			cfg.DBConfig.DBUser, cfg.DBConfig.DBPassword, cfg.DBConfig.DBHost, cfg.DBConfig.DBPort, cfg.DBConfig.DBName))
+	dbpool, err := database.ConnectDB(cfg)
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		slog.Error("failed to connect to db", slog.Any("error", err))
+		return
 	}
 	defer dbpool.Close()
 
+	if err := database.RunMigrations(dbpool); err != nil {
+		slog.Error("error running migrations", slog.Any("error", err))
+		return
+	}
+
 	messageRepo := repository.NewMessageRepository(dbpool)
-	kafkaProducer := kafka.NewKafkaProducer([]string{cfg.KafkaConfig.KafkaHost + ":" + cfg.KafkaConfig.KafkaPort}, cfg.KafkaConfig.Topic)
-	kafkaConsumer := kafka.NewKafkaConsumer([]string{cfg.KafkaConfig.KafkaHost + ":" + cfg.KafkaConfig.KafkaPort}, cfg.KafkaConfig.Topic, cfg.KafkaConfig.Group, messageRepo)
+	// kafkaProducer := kafka.NewKafkaProducer([]string{cfg.KafkaHost + ":" + cfg.KafkaPort}, cfg.Topic)
+	// kafkaConsumer := kafka.NewKafkaConsumer([]string{cfg.KafkaHost + ":" + cfg.KafkaPort}, cfg.Topic, cfg.Group, messageRepo)
 
 	router := gin.Default()
 
-	messageHandler := api.NewMessageHandler(messageRepo, kafkaProducer)
+	messageHandler := api.NewMessageHandler(messageRepo /*, kafkaProducer*/)
 
 	router.POST("/messages", messageHandler.PostMessage)
 	router.GET("/statistics", messageHandler.GetStatistics)
 
-	go kafkaConsumer.StartConsuming(context.Background())
+	// go kafkaConsumer.StartConsuming(context.Background())
 
 	srv := &http.Server{
 		Addr:    "localhost:8080",
@@ -53,7 +57,7 @@ func main() {
 	}
 
 	go func() {
-		if err := srv.ListenAndServe(); err != nil /*&& err != http.ErrServerClosed*/ {
+		if err := srv.ListenAndServe(); err != nil {
 			log.Fatalf("listen: %s\n", err)
 		}
 	}()

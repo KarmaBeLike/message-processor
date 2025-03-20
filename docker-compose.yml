@@ -1,13 +1,42 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  app:
-    build: .
-    ports:
-      - "8080:8080"
+  postgres:
+    container_name: message
+    image: postgres:latest
     environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: your_user
-      DB_PASSWORD: your_password
-      DB_NAME: message_db
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - "postgres_data:/var/lib/postgresql/data"
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    volumes:
+      - "kafka_data:/var/lib/kafka/data"
+
+volumes:
+  postgres_data:
+  kafka_data:

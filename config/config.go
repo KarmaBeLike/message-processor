@@ -7,8 +7,15 @@ import (
 )
 
 type Config struct {
-	DBConfig    DBConfig
-	KafkaConfig KafkaConfig
+	DBHost     string
+	DBPort     string
+	DBUser     string
+	DBPassword string
+	DBName     string
+	KafkaHost  string
+	KafkaPort  string
+	Topic      string
+	Group      string
 }
 
 func LoadConfig() (*Config, error) {
@@ -18,19 +25,16 @@ func LoadConfig() (*Config, error) {
 	}
 
 	config := &Config{
-		DBConfig: DBConfig{
-			DBHost:     os.Getenv("DB_HOST"),
-			DBPort:     os.Getenv("DB_PORT"),
-			DBUser:     os.Getenv("DB_USER"),
-			DBPassword: os.Getenv("DB_PASSWORD"),
-			DBName:     os.Getenv("DB_NAME"),
-		},
-		KafkaConfig: KafkaConfig{
-			KafkaHost: os.Getenv("KAFKA_HOST"),
-			KafkaPort: os.Getenv("KAFKA_PORT"),
-			Topic:     os.Getenv("TOPIC"),
-			Group:     os.Getenv("GROUP"),
-		},
+		DBHost:     os.Getenv("DB_HOST"),
+		DBPort:     os.Getenv("DB_PORT"),
+		DBUser:     os.Getenv("DB_USER"),
+		DBPassword: os.Getenv("DB_PASSWORD"),
+		DBName:     os.Getenv("DB_NAME"),
+
+		KafkaHost: os.Getenv("KAFKA_HOST"),
+		KafkaPort: os.Getenv("KAFKA_PORT"),
+		Topic:     os.Getenv("TOPIC"),
+		Group:     os.Getenv("GROUP"),
 	}
 	return config, nil
 }
